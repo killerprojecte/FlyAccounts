@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+}
+
+group 'flyproject'
+version '1.0.0'
+
+
+dependencies {
+}
+
+repositories {
+    maven {
+        url 'https://repo.maven.apache.org/maven2'
+        name 'Maven Central'
+    }
+}

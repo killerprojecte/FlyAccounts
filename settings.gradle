@@ -1,0 +1,4 @@
+rootProject.name = 'FlyAccounts'
+include 'FlyAccounts-Server'
+include 'FlyAccounts-Client'
+

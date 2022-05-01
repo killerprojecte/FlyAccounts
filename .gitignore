@@ -1,0 +1,6 @@
+# 项目排除路径
+/.gradle/
+/FlyAccounts-Client/build/
+/FlyAccounts-Client/build/classes/java/main/
+/FlyAccounts-Server/build/
+/FlyAccounts-Server/build/classes/java/main/
