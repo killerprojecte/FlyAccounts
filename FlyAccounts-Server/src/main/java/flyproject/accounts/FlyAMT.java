@@ -9,6 +9,7 @@ public class FlyAMT implements Runnable{
     @Override
     public void run() {
         FlyAccounts.logger.info("[THREAD] 主线程正在启动...");
+        FlyAccounts.logger.info("正在监听 /0.0.0.0:" + FlyAccounts.config.getInt("port"));
         ServerSocket s = null;
         try {
             s = new ServerSocket(FlyAccounts.config.getInt("port"));
@@ -49,28 +50,32 @@ public class FlyAMT implements Runnable{
             String str = null;
             boolean status = true;
             try {
-                while ((str = br.readLine())!=null){
-                    str = FlyAccounts.decrypt(str);
-                    String[] send = str.split(":");
-                    String password = FlyAccounts.config.getString("user." + send[0]);
-                    if (password==null){
-                        pw.println(FlyAccounts.encrypt("INVAILD"));
-                        pw.flush();
-                        pw.close();
-                        br.close();
-                        socket.close();
-                        status = false;
-                        break;
-                    }
-                    if (!password.equals(send[1])){
-                        pw.println(FlyAccounts.encrypt("INVAILD"));
-                        pw.flush();
-                        pw.close();
-                        br.close();
-                        socket.close();
-                        status = false;
-                        break;
-                    }
+                str = br.readLine();
+                str = FlyAccounts.decrypt(str);
+                String[] send = str.split(":");
+                String password = FlyAccounts.config.getString("user." + send[0]);
+                if (password==null){
+                    pw.println(FlyAccounts.encrypt("INVAILD"));
+                    pw.flush();
+                    pw.close();
+                    br.close();
+                    socket.close();
+                    status = false;
+                } else if (!password.equals(send[1])){
+                    pw.println(FlyAccounts.encrypt("INVAILD"));
+                    pw.flush();
+                    pw.close();
+                    br.close();
+                    socket.close();
+                    status = false;
+                } else if (FlyAccounts.cooldown.contains(send[0])){
+                    pw.println(FlyAccounts.encrypt("CD"));
+                    pw.flush();
+                    pw.close();
+                    br.close();
+                    socket.close();
+                    status = false;
+                } else {
                     Scanner sc = new Scanner(new FileInputStream(System.getProperty("user.dir") + "/accounts.txt"));
                     String rw = sc.nextLine();
                     pw.println(FlyAccounts.encrypt(rw));
@@ -86,6 +91,12 @@ public class FlyAMT implements Runnable{
                             out.write(next);
                         out.newLine();
                     }
+                    FlyAccounts.cooldown.add(send[0]);
+                    new Thread(() -> {
+                        if (FlyAccounts.cooldown.contains(send[0])){
+                            FlyAccounts.cooldown.remove(send[0]);
+                        }
+                    }).start();
                     out.close();
                     socket.close();
                 }

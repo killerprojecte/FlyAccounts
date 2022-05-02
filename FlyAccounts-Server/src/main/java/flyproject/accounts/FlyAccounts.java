@@ -6,10 +6,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import javax.crypto.Cipher;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.*;
@@ -17,13 +14,16 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 public class FlyAccounts {
     public static Logger logger = LogManager.getRootLogger();
     public static FileConfiguration config;
     public static String pkey;
     public static String prkey;
+    public static List<String> cooldown = new ArrayList<>();
     public static void main(String[] args) throws Exception {
         logger.info("[FlyAccounts] 正在加载...");
         saveResource("config.yml");
@@ -58,6 +58,29 @@ public class FlyAccounts {
         });
         daemon.setDaemon(true);
         daemon.start();
+        new Thread(() -> {
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            while (true){
+                try {
+                    String str = br.readLine();
+                    if (str.startsWith("add")){
+                        String[] arg = str.split(" ");
+                        config.set("user." + arg[1],arg[2]);
+                        config.save(CF);
+                        config = YamlConfiguration.loadConfiguration(CF);
+                        System.out.println("添加成功");
+                    } else if (str.equalsIgnoreCase("reload")){
+                        config = YamlConfiguration.loadConfiguration(CF);
+                        System.out.println("重载成功");
+                    } else {
+                        System.out.println("add 用户名 密码 ———— 添加账号");
+                        System.out.println("reload ———— 重载配置文件");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
     public static String encrypt(String str) throws Exception {
         //base64编码的公钥
