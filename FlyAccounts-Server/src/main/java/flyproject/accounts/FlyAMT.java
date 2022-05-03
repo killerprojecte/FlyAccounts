@@ -1,9 +1,14 @@
 package flyproject.accounts;
 
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class FlyAMT implements Runnable{
     @Override
@@ -48,10 +53,50 @@ public class FlyAMT implements Runnable{
                 e.printStackTrace();
             }
             String str = null;
-            boolean status = true;
             try {
                 str = br.readLine();
                 str = FlyAccounts.decrypt(str);
+                if (str.startsWith("REG::")){
+                    String[] reg = str.split("::");
+                    String cdkey = reg[1];
+                    String user = reg[2];
+                    String pass = reg[3];
+                    if (FlyAccounts.config.getStringList("cdkey").contains(cdkey)){
+                        if (FlyAccounts.config.getString("user." + user)!=null){
+                            pw.println(FlyAccounts.encrypt("USER"));
+                            pw.flush();
+                            pw.close();
+                            br.close();
+                            socket.close();
+                            continue;
+                        }
+                        System.out.println("[REG] 注册账号中...");
+                        List<String> keys = FlyAccounts.config.getStringList("cdkey");
+                        keys.remove(cdkey);
+                        if (keys.size()==0){
+                            keys.add(UUID.randomUUID().toString());
+                            System.out.println("[CDKey] 已自动生成一个CDK");
+                        }
+                        FlyAccounts.config.set("cdkey",keys);
+                        FlyAccounts.config.set("user." + user,pass);
+                        FlyAccounts.config.save(FlyAccounts.CF);
+                        FlyAccounts.config = YamlConfiguration.loadConfiguration(FlyAccounts.CF);
+                        pw.println(FlyAccounts.encrypt("OK"));
+                        pw.flush();
+                        pw.close();
+                        br.close();
+                        FlyAccounts.logger.info("[REG] IP: " + socket.getInetAddress().getHostAddress() + " 注册账号: " + user + " 成功");
+                        socket.close();
+                        continue;
+                    } else {
+                        pw.println(FlyAccounts.encrypt("INVAILD"));
+                        pw.flush();
+                        pw.close();
+                        br.close();
+                        socket.close();
+                        continue;
+                    }
+                }
                 String[] send = str.split(":");
                 String password = FlyAccounts.config.getString("user." + send[0]);
                 if (password==null){
@@ -60,51 +105,58 @@ public class FlyAMT implements Runnable{
                     pw.close();
                     br.close();
                     socket.close();
-                    status = false;
                 } else if (!password.equals(send[1])){
                     pw.println(FlyAccounts.encrypt("INVAILD"));
                     pw.flush();
                     pw.close();
                     br.close();
                     socket.close();
-                    status = false;
                 } else if (FlyAccounts.cooldown.contains(send[0])){
                     pw.println(FlyAccounts.encrypt("CD"));
                     pw.flush();
                     pw.close();
                     br.close();
                     socket.close();
-                    status = false;
                 } else {
-                    Scanner sc = new Scanner(new FileInputStream(System.getProperty("user.dir") + "/accounts.txt"));
-                    String rw = sc.nextLine();
-                    pw.println(FlyAccounts.encrypt(rw));
-                    pw.flush();
-                    pw.close();
-                    FileWriter fileStream = new FileWriter(System.getProperty("user.dir") + "/accounts.txt");
-                    BufferedWriter out = new BufferedWriter(fileStream);
-                    while(sc.hasNextLine()) {
-                        String next = sc.nextLine();
-                        if(next.equals("\n"))
-                            out.newLine();
-                        else
-                            out.write(next);
-                        out.newLine();
+                    File txtf = new File(System.getProperty("user.dir") + "/accounts.txt");
+                    BufferedReader txr = new BufferedReader(new FileReader(txtf));
+                    List<String> list = new ArrayList<>();
+                    String r = null;
+                    boolean skip = true;
+                    while ((r = txr.readLine()) !=null){
+                        if (skip){
+                            pw.println(FlyAccounts.encrypt(r));
+                            pw.flush();
+                            pw.close();
+                            skip = false;
+                            continue;
+                        }
+                        list.add(r);
                     }
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(txtf));
+                    for (String line : list){
+                        bw.write(line);
+                        bw.newLine();
+                    }
+                    bw.flush();
+                    bw.close();
+                    txr.close();
                     FlyAccounts.cooldown.add(send[0]);
                     new Thread(() -> {
+                        try {
+                            Thread.sleep(1000 * 60 * 3);
+                        } catch (InterruptedException e) {
+                        }
                         if (FlyAccounts.cooldown.contains(send[0])){
                             FlyAccounts.cooldown.remove(send[0]);
                         }
                     }).start();
-                    out.close();
+                    FlyAccounts.logger.info("[REWARD] 已返回一个账号给IP " + socket.getInetAddress().getHostAddress() + " 用户名: " + send[0]);
                     socket.close();
                 }
             } catch (Exception e){
                 continue;
             }
-            if (!status) continue;
-            FlyAccounts.logger.info("[REWARD] 已返回一个账号给IP " + socket.getInetAddress().getHostAddress());
         }
     }
 }

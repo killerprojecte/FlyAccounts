@@ -17,6 +17,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 public class FlyAccounts {
     public static Logger logger = LogManager.getRootLogger();
@@ -24,11 +25,12 @@ public class FlyAccounts {
     public static String pkey;
     public static String prkey;
     public static List<String> cooldown = new ArrayList<>();
+    public static File CF;
     public static void main(String[] args) throws Exception {
         logger.info("[FlyAccounts] 正在加载...");
         saveResource("config.yml");
         saveResource("accounts.txt");
-        File CF = new File(System.getProperty("user.dir") + "/config.yml");
+        CF = new File(System.getProperty("user.dir") + "/config.yml");
         config = YamlConfiguration.loadConfiguration(CF);
         if (config.get("privatekey")==null || config.get("publickey")==null){
             logger.warn("检测到未配置RSA密钥");
@@ -36,6 +38,15 @@ public class FlyAccounts {
             config.set("privatekey",key[1]);
             config.set("publickey",key[0]);
             logger.warn("已自动生成");
+            config.save(CF);
+            config = YamlConfiguration.loadConfiguration(CF);
+        }
+        if (config.get("cdkey")==null){
+            logger.warn("检测到CDK为空 将自动生成");
+            UUID uuid = UUID.randomUUID();
+            List<String> cdkeys = new ArrayList<>();
+            cdkeys.add(uuid.toString());
+            config.set("cdkey",cdkeys);
             config.save(CF);
             config = YamlConfiguration.loadConfiguration(CF);
         }
@@ -72,7 +83,20 @@ public class FlyAccounts {
                     } else if (str.equalsIgnoreCase("reload")){
                         config = YamlConfiguration.loadConfiguration(CF);
                         System.out.println("重载成功");
-                    } else {
+                    } else if (str.equals("gencdk")){
+                        UUID uuid = null;
+                        while (true){
+                            uuid = UUID.randomUUID();
+                            if (!config.getStringList("cdkey").contains(uuid.toString())) break;
+                        }
+                        System.out.println("生成成功");
+                        System.out.println("CDK: " + uuid.toString());
+                        List<String> cdkeys = config.getStringList("cdkey");
+                        cdkeys.add(uuid.toString());
+                        config.set("cdkey",cdkeys);
+                        config.save(CF);
+                        config = YamlConfiguration.loadConfiguration(CF);
+                    }else {
                         System.out.println("add 用户名 密码 ———— 添加账号");
                         System.out.println("reload ———— 重载配置文件");
                     }

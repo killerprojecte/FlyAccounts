@@ -17,13 +17,38 @@ import java.util.Base64;
 public class FlyAccountsClient {
     static JTextArea username;
     static JTextArea password;
-    static String pkey = "";
-    static String prkey = "";
-    static String serverip = "127.0.0.1";
+    static String pkey = "Put RSA Publice Key Here";
+    static String prkey = "Put RSA Private Key Here";
+    static String serverip = "Put your server ip here";
     static int serverport = 1567;
-    public static void main(String[] args) {
+    static String u;
+    static String p;
+    public static void main(String[] args) throws IOException {
+        File rfile = new File(System.getProperty("user.dir") + "/reg.lock");
+        int reg = 9;
+        if (!rfile.exists()){
+            reg = JOptionPane.showConfirmDialog(null, "是否需要注册账号", "账号注册", JOptionPane.YES_NO_OPTION);
+        }
+        String cdkey = null;
+        if (reg==JOptionPane.YES_OPTION){
+            cdkey = JOptionPane.showInputDialog("请输入注册卡密");
+        }
+        if (!rfile.exists() && reg!=JOptionPane.YES_OPTION) System.exit(0);
         String user = JOptionPane.showInputDialog("请输入用户名");
         String pass = JOptionPane.showInputDialog("请输入密码");
+        u = user;
+        p = pass;
+        if (user==null || pass==null){
+            JOptionPane.showMessageDialog(null,"出错啦","输入的用户名或密码为空！",JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (reg==JOptionPane.YES_OPTION){
+            if (reg(user,pass,cdkey)){
+                rfile.createNewFile();
+            } else {
+                System.exit(0);
+            }
+        }
         JFrame frame = new JFrame("FlyAccounts | Powered by FlyProject");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         JPanel mainPanel = new JPanel();
@@ -66,10 +91,15 @@ public class FlyAccountsClient {
             String str = decrypt(br.readLine());
             if (str.equals("INVAILD")){
                 JOptionPane.showMessageDialog(null,"账户名或密码错误");
+                username.setText("获取用户名错误");
+                password.setText("获取密码错误");
             } else if (str.equals("CD")){
                 JOptionPane.showMessageDialog(null,"用户正在冷却 请等待...");
+                username.setText("获取用户名错误");
+                password.setText("获取密码错误");
             } else {
-                String[] arg = str.split("|");
+                System.out.println(str);
+                String[] arg = str.split(":");
                 username.setText(arg[0]);
                 password.setText(arg[1]);
             }
@@ -84,6 +114,44 @@ public class FlyAccountsClient {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static boolean reg(String user,String pass,String cdkey){
+        Socket socket = null;
+        BufferedReader br = null;
+        PrintWriter pw = null;
+        try {
+            //客户端socket指定服务器的地址和端口号
+            socket = new Socket(serverip, serverport);
+            socket.setSoTimeout(10000);
+            //同服务器原理一样
+            br = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream()));
+            pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
+                    socket.getOutputStream())));
+            pw.println(encrypt("REG::" + cdkey + "::" + user + "::" + pass));
+            pw.flush();
+            String str = decrypt(br.readLine());
+            if (str.equals("INVAILD")){
+                JOptionPane.showMessageDialog(null,"CDKey错误");
+            } else if (str.equals("USER")){
+                JOptionPane.showMessageDialog(null,"该账号已存在");
+            } else if (str.equals("OK")){
+                JOptionPane.showMessageDialog(null,"注册成功！");
+                return true;
+            }
+        } catch (Exception e) {
+        } finally {
+            try {
+                br.close();
+                pw.close();
+                socket.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 
     public static String encrypt(String str) throws Exception{
@@ -111,7 +179,7 @@ public class FlyAccountsClient {
 
     public static class SendButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent ev) {
-
+            get(u,p);
         }
     }
 }

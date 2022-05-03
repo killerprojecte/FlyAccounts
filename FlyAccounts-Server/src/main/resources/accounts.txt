@@ -1,1 +1,1 @@
-user@mail.com|password
+user@mail.com:password
