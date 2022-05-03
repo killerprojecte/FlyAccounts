@@ -99,6 +99,7 @@ public class FlyAccounts {
                     }else {
                         System.out.println("add 用户名 密码 ———— 添加账号");
                         System.out.println("reload ———— 重载配置文件");
+                        System.out.println("gencdk ———— 生成CDK");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
