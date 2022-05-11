@@ -21,76 +21,52 @@ public class FlyAccountsClient {
     static JTextArea password;
     static String pkey = "Put your RSA public key here";
     static String prkey = "Put your RSA private key here";
-    static String serverip = "Put your server ip here";
+    static String serverip = "Put your server address here";
     static int serverport = 1567;
     static String u;
     static String p;
+    static JTextField uinput;
+    static JTextField pinput;
+    static JPanel mainPanel;
+    static JFrame frame;
+    static int reg;
+    static File rfile;
+    static String cdkey;
+    static JButton login;
+    static JLabel ul;
+    static JLabel pl;
     public static void main(String[] args) throws IOException {
-        File rfile = new File(System.getProperty("user.dir") + "/reg.lock");
-        int reg = 9;
+        rfile = new File(System.getProperty("user.dir") + "/reg.lock");
+        reg = 9;
         if (!rfile.exists()){
             reg = JOptionPane.showConfirmDialog(null, "是否需要注册账号", "账号注册", JOptionPane.YES_NO_OPTION);
         }
-        String cdkey = null;
+        cdkey = null;
         if (reg==JOptionPane.YES_OPTION){
             cdkey = JOptionPane.showInputDialog("请输入注册卡密");
         }
         if (!rfile.exists() && reg!=JOptionPane.YES_OPTION) System.exit(0);
-        String user = JOptionPane.showInputDialog("请输入用户名");
-        String pass = JOptionPane.showInputDialog("请输入密码");
-        u = user;
-        p = pass;
-        if (user==null || pass==null){
-            JOptionPane.showMessageDialog(null,"出错啦","输入的用户名或密码为空！",JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (reg==JOptionPane.YES_OPTION){
-            if (reg(user,pass,cdkey)){
-                rfile.createNewFile();
-            } else {
-                System.exit(0);
-            }
-        }
-        JFrame frame = new JFrame("FlyAccounts | Powered by FlyProject");
+        frame = new JFrame("FlyAccounts | Powered by FlyProject");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        JPanel mainPanel = new JPanel();
-        JLabel label = new JLabel("用户名: ");
-        JLabel label2 = new JLabel("密码: ");
-        username = new JTextArea(1,27);
-        username.setLineWrap(true);
-        username.setWrapStyleWord(true);
-        username.setEditable(false);
-        username.setToolTipText("用户名");
-        username.setText("用户名");
-        password = new JTextArea(1,27);
-        password.setLineWrap(true);
-        password.setWrapStyleWord(true);
-        password.setEditable(false);
-        password.setToolTipText("密码");
-        password.setText("密码");
-        JButton sendButton = new JButton("获取账号");
-        Font font = new Font("雅黑",Font.PLAIN,15);
-        Font font2 = new Font("雅黑",Font.PLAIN,13);
-        JLabel lb = new JLabel("你好, 尊敬的 " + user);
-        Font font3 = new Font("雅黑",Font.BOLD,20);
-        lb.setFont(font3);
-        lb.setForeground(Color.GRAY);
-        sendButton.addActionListener(new SendButtonListener());
-        sendButton.setBackground(Color.PINK);
-        sendButton.setFont(font);
-        label.setFont(font2);
-        label2.setFont(font2);
-        username.setFont(font2);
-        password.setFont(font2);
-        mainPanel.setLayout(new GridBagLayout());
+        mainPanel = new JPanel();
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
-        mainPanel.add(lb,gbc);
-        mainPanel.add(label);
-        mainPanel.add(username,gbc);
-        mainPanel.add(label2);
-        mainPanel.add(password,gbc);
-        mainPanel.add(sendButton,gbc);
+        Font font = new Font("雅黑",Font.PLAIN,15);
+        Font font2 = new Font("雅黑",Font.PLAIN,13);
+        Font font3 = new Font("雅黑",Font.BOLD,20);
+        ul = new JLabel("用户名: ");
+        pl = new JLabel("密码: ");
+        uinput = new JTextField(15);
+        pinput = new JTextField(15);
+        login = new JButton("登入并获取小号");
+        login.setBackground(Color.PINK);
+        login.addActionListener(new LoginListener());
+        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.add(ul);
+        mainPanel.add(uinput,gbc);
+        mainPanel.add(pl);
+        mainPanel.add(pinput,gbc);
+        mainPanel.add(login,gbc);
         mainPanel.setBackground(Color.PINK);
         frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
         frame.setSize(400, 200);
@@ -204,6 +180,70 @@ public class FlyAccountsClient {
 
     public static class SendButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent ev) {
+            get(u,p);
+        }
+    }
+
+    public static class LoginListener implements ActionListener {
+        public void actionPerformed(ActionEvent ev) {
+            u = uinput.getText();
+            p = pinput.getText();
+            if (u==null || p==null){
+                JOptionPane.showMessageDialog(null,"出错啦","输入的用户名或密码为空！",JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (reg==JOptionPane.YES_OPTION){
+                if (reg(u,p,cdkey)){
+                    try {
+                        rfile.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.exit(0);
+                }
+            }
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridwidth = GridBagConstraints.REMAINDER;
+            Font font = new Font("雅黑",Font.PLAIN,15);
+            Font font2 = new Font("雅黑",Font.PLAIN,13);
+            Font font3 = new Font("雅黑",Font.BOLD,20);
+            JLabel label = new JLabel("用户名 ");
+            JLabel label2 = new JLabel("密码 ");
+            username = new JTextArea(1,27);
+            username.setLineWrap(true);
+            username.setWrapStyleWord(true);
+            username.setEditable(false);
+            username.setToolTipText("用户名");
+            username.setText("用户名");
+            password = new JTextArea(1,27);
+            password.setLineWrap(true);
+            password.setWrapStyleWord(true);
+            password.setEditable(false);
+            password.setToolTipText("密码");
+            password.setText("密码");
+            JButton sendButton = new JButton("获取账号");
+            JLabel lb = new JLabel("你好, 尊敬的 " + u);
+            lb.setFont(font3);
+            lb.setForeground(Color.GRAY);
+            sendButton.addActionListener(new SendButtonListener());
+            sendButton.setBackground(Color.PINK);
+            sendButton.setFont(font);
+            label.setFont(font2);
+            label2.setFont(font2);
+            username.setFont(font2);
+            password.setFont(font2);
+            mainPanel.removeAll();
+            mainPanel.repaint();
+            mainPanel.setLayout(new GridBagLayout());
+            mainPanel.add(lb,gbc);
+            mainPanel.add(label);
+            mainPanel.add(username,gbc);
+            mainPanel.add(label2);
+            mainPanel.add(password,gbc);
+            mainPanel.add(sendButton,gbc);
+            mainPanel.setBackground(Color.PINK);
+            mainPanel.revalidate();
             get(u,p);
         }
     }
